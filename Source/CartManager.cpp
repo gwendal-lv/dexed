@@ -173,7 +173,7 @@ void CartManager::buttonClicked(juce::Button *buttonThatWasClicked) {
     }
     
     if ( buttonThatWasClicked == loadButton.get() ) {
-        FileChooser fc ("Import original DX sysex...", File::getSpecialLocation(File::SpecialLocationType::userDocumentsDirectory), "*.syx;*.SYX;*.*", 1);
+        FileChooser fc ("Import original DX sysex...", File::getSpecialLocation(File::SpecialLocationType::userDocumentsDirectory), "*.syx;*.SYX", 1);
         
         if ( fc.browseForFileToOpen())
             mainWindow->loadCart(fc.getResult());
