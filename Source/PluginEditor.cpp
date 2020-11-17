@@ -131,14 +131,19 @@ void DexedAudioProcessorEditor::loadCart(File file) {
         if ( rc == 0 )
             return;
     }
-    
-    processor->loadCartridge(cart);
+    // Added debug info....
+    TRACE((std::string("New valid cartridge from file: ") + file.getFileName().toStdString()).c_str());
+    processor->loadCartridge(cart); // also pre-loads processor->programNames (StringArray)
     rebuildProgramCombobox();
     processor->setCurrentProgram(0);
     global.programs->setSelectedId(processor->getCurrentProgram()+1, dontSendNotification);
     processor->updateHostDisplay();
     
     processor->activeFileCartridge = file;
+    
+    // TODO MOVE TO THE "SELECTED PRESET" CALLBACK ?????
+    csvPresetsWriter.WriteCurrentCartridge(processor);  // depending on internal state, might decide not to write anything
+    processor->setCurrentProgram(0);  // re-set to zero - to remain actually usable
 }
 
 void DexedAudioProcessorEditor::saveCart() {

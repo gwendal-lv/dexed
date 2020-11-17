@@ -28,6 +28,10 @@
 #include "DXLookNFeel.h"
 #include "CartManager.h"
 
+#ifdef __WRITE_PRESETS_DATABASE
+#include "CSVPresetsWriter.h"
+#endif
+
 //==============================================================================
 /**
 */
@@ -39,6 +43,11 @@ class DexedAudioProcessorEditor  : public AudioProcessorEditor, public ComboBox:
     CartManager cartManager;
 
     SharedResourcePointer<DXLookNFeel> lookAndFeel;
+                                       
+#ifdef __WRITE_PRESETS_DATABASE
+    CSVPresetsWriter csvPresetsWriter;
+#endif
+                                       
 public:
     DexedAudioProcessor *processor;
     GlobalEditor global;

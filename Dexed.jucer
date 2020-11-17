@@ -11,7 +11,7 @@
               buildVST3="1" buildRTAS="0" buildAAX="0" pluginManufacturerEmail="support@yourcompany.com"
               buildAUv3="0" pluginIsMidiEffectPlugin="0" displaySplashScreen="0"
               reportAppUsage="0" splashScreenColour="Dark" buildStandalone="1"
-              enableIAA="0" cppLanguageStandard="latest" companyCopyright="Digital Suburban"
+              enableIAA="0" cppLanguageStandard="17" companyCopyright="Digital Suburban"
               pluginFormats="buildAU,buildStandalone,buildVST3" pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn,pluginProducesMidiOut"
               jucerFormatVersion="1" defines="__WRITE_PRESETS_DATABASE">
   <MAINGROUP id="kHXTgw" name="Dexed">
@@ -47,6 +47,10 @@
             file="Resources/ui/OperatorEditor_287x218.png"/>
     </GROUP>
     <GROUP id="{EA38D88A-6B79-E394-8B57-FA22D50C4D86}" name="Source">
+      <FILE id="MfKb5C" name="CSVPresetsWriter.cpp" compile="1" resource="0"
+            file="Source/CSVPresetsWriter.cpp"/>
+      <FILE id="gkRRFF" name="CSVPresetsWriter.h" compile="0" resource="0"
+            file="Source/CSVPresetsWriter.h"/>
       <GROUP id="{1B64F271-8E56-F19A-FF63-094159E5EF7B}" name="dsp">
         <FILE id="bvvgdq" name="PluginFx.cpp" compile="1" resource="0" file="Source/PluginFx.cpp"/>
         <FILE id="E4gace" name="PluginFx.h" compile="0" resource="0" file="Source/PluginFx.h"/>
@@ -152,9 +156,9 @@
                extraDefs="JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS=0">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="Dexed"
-                       osxCompatibility="10.10 SDK" osxArchitecture="64BitIntel" enablePluginBinaryCopyStep="1"/>
+                       osxCompatibility="10.15 SDK" osxArchitecture="64BitIntel" enablePluginBinaryCopyStep="1"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="Dexed"
-                       osxSDK="10.10 SDK" osxCompatibility="10.7 SDK" osxArchitecture="64BitIntel"
+                       osxSDK="10.10 SDK" osxCompatibility="10.15 SDK" osxArchitecture="64BitIntel"
                        enablePluginBinaryCopyStep="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
