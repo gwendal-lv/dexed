@@ -30,6 +30,7 @@
 
 #ifdef __WRITE_PRESETS_DATABASE
 #include "CSVPresetsWriter.h"
+class CSVPresetsWriter;  // forward declaration
 #endif
 
 //==============================================================================
@@ -45,7 +46,7 @@ class DexedAudioProcessorEditor  : public AudioProcessorEditor, public ComboBox:
     SharedResourcePointer<DXLookNFeel> lookAndFeel;
                                        
 #ifdef __WRITE_PRESETS_DATABASE
-    CSVPresetsWriter csvPresetsWriter;
+    std::shared_ptr<CSVPresetsWriter> csvPresetsWriter;
 #endif
                                        
 public:
@@ -60,7 +61,7 @@ public:
     virtual void comboBoxChanged (ComboBox* comboBoxThatHasChanged) override;
     void updateUI();
     void rebuildProgramCombobox();
-    void loadCart(File file);
+    bool loadCart(File file);
     void saveCart();
     void initProgram();
     void storeProgram();

@@ -14,15 +14,19 @@
 
 #include "Dexed.h"  // TRACE macro
 
-CSVPresetsWriter::CSVPresetsWriter() {
+CSVPresetsWriter::CSVPresetsWriter(DexedAudioProcessorEditor* _pluginEditor) : pluginEditor(_pluginEditor) {
     presetsFolder = "/Users/gwendal/Music/DX7_AllTheWeb";
-    
-    // TEST CSV FILE
-    shouldWriteCatridges = true;  // TEMP, TODO MODIFIER
+    shouldWriteCatridges = false;  // to prevent the writing during startup
     
     // Pre-process all available files in directory and sub-directories
     scanDirectory(presetsFolder);
     std::cout << "Presets scan results: " << subFolders.size() << " sub-folders, " << cartridgeFiles.size() << " cartridges (some may be unvalid)." << std::endl;
+    
+    // TEST chargement différé d'une cartouche
+    Timer::callAfterDelay(2000, [&] () {
+        this->shouldWriteCatridges = true;
+        this->loadNextCartridge();
+    } );
 }
 
 void CSVPresetsWriter::scanDirectory(std::string dirPath) {
@@ -42,33 +46,58 @@ void CSVPresetsWriter::scanDirectory(std::string dirPath) {
     }
 }
 
-void CSVPresetsWriter::WriteCurrentCartridge(DexedAudioProcessor *processor) {
+void CSVPresetsWriter::loadNextCartridge() {
+    currentCartridgeFileIndex++;
+    if (currentCartridgeFileIndex >= cartridgeFiles.size())  // TEMP POUR TEST, lire le tout
+    {
+        shouldWriteCatridges = false;  // after writing, the dexed can be used normally
+        return;
+    }
+    // If a new cartridge can be loaded, the prepare the folder/name for the future CSV writing
+    std::filesystem::directory_entry& entry = cartridgeFiles[currentCartridgeFileIndex];
+    const std::filesystem::path& path = entry.path();
+    //std::cout << "filename: " << path.filename() << std::endl;
+    currentCartridgeName = path.filename();
+    currentCartridgeName = currentCartridgeName.substr(0, currentCartridgeName.size() - 4);  // .syx or .SYX removal
+    //std::cout << "cartridge name = " << currentCartridgeName << std::endl;
+    currentSubFolder = std::string(path.parent_path());
+    
+    // Cartridge loading. If unvalid cartridge: we go to the next one
+    if (! pluginEditor->loadCart(File(std::string(path)))) {
+        std::cout << "========== Cartridge " << currentCartridgeName << " from folder " << currentSubFolder << " cannot be loaded. ==========" << std::endl;
+        Timer::callAfterDelay(1, [&] () { this->loadNextCartridge(); } );
+    }
+}
+
+void CSVPresetsWriter::WriteCurrentCartridge(DexedAudioProcessor *pluginProcessor) {
     if (! shouldWriteCatridges)
         return;
     
-    // TODO checker le folder, cohérence etc...
-    currentSubFolder = "";
-    currentCartridgeName = "Dexed_01";
+    char delimiter = ';';
     // CSV file: creation and column names
     std::ofstream csvFile;
-    char delimiter = ';';
-    csvFile.open(getCurrentPath() + "/a_dummy_test.csv");
+    std::string csvFileName = currentSubFolder + "/" + currentCartridgeName + ".csv";
+    std::cout << "========== Writing " << csvFileName << " ==========" << std::endl;
+    csvFile.open(csvFileName);
     csvFile << "preset_index;preset_name";
-    for (size_t i=0 ; i<processor->getNumParameters() ; i++)
+    for (size_t i=0 ; i<pluginProcessor->getNumParameters() ; i++)
         csvFile << delimiter << i;
     csvFile << std::endl;
     // Actual reading of all parameters
-    for (size_t preset_idx=0 ; preset_idx < processor->getNumPrograms() ; preset_idx++) {
-        processor->setCurrentProgram(preset_idx);
-        std::string presetName = processor->getProgramName(preset_idx).toStdString();
+    for (size_t preset_idx=0 ; preset_idx < pluginProcessor->getNumPrograms() ; preset_idx++) {
+        pluginProcessor->setCurrentProgram(preset_idx);
+        std::string presetName = pluginProcessor->getProgramName(preset_idx).toStdString();
         if (presetName.find(delimiter) != std::string::npos) {  // if the delimiter is found, we have a problem
-            assert(false);  // check the name and how to replace the delimiter-like char
+            //assert(false);  // check the name and how to replace the delimiter-like char
             size_t delimiterPos = presetName.find(delimiter);
             presetName[delimiterPos] = ' ';
         }
         csvFile << preset_idx << delimiter << presetName;
-        for (size_t i=0 ; i<processor->getNumParameters() ; i++)
-            csvFile << delimiter << std::to_string(processor->getParameter(i));
+        for (size_t i=0 ; i<pluginProcessor->getNumParameters() ; i++)
+            csvFile << delimiter << std::to_string(pluginProcessor->getParameter(i));
         csvFile << std::endl;
     }
+    
+    // LOAD NEXT PRESET
+    Timer::callAfterDelay(1, [&] () { this->loadNextCartridge(); } );
 }

@@ -86,6 +86,9 @@ DexedAudioProcessorEditor::DexedAudioProcessorEditor (DexedAudioProcessor* owner
     global.programs->addListener(this);
     
     addChildComponent(&cartManager);
+    #ifdef __WRITE_PRESETS_DATABASE
+        csvPresetsWriter = std::make_shared<CSVPresetsWriter>(this);
+    #endif
     
     updateUI();
     startTimer(100);
@@ -112,24 +115,32 @@ void DexedAudioProcessorEditor::cartShow() {
 }
 
 
-void DexedAudioProcessorEditor::loadCart(File file) {
+/// This function if called from the CartManagerUI,
+/// or automatically from CSVPresetsWriter when building the presets database
+///
+/// Returns whether the cartridge could be loaded (if valid) or not
+bool DexedAudioProcessorEditor::loadCart(File file) {
     Cartridge cart;
 
     int rc = cart.load(file);
     
     if ( rc < 0 ) {
+#ifndef __WRITE_PRESETS_DATABASE  // we do not the alert window - preset is just dismissed
         AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
                                           "Error",
                                           "Unable to open: " + file.getFullPathName());
-        return;
+#endif
+        return false;
     }
     
     if ( rc != 0 ) {
+#ifndef __WRITE_PRESETS_DATABASE  // we do not the alert window - preset is just dismissed
         rc = AlertWindow::showOkCancelBox(AlertWindow::QuestionIcon, "Unable to find DX7 sysex cartridge in file",
                                           "This sysex file is not for the DX7 or it is corrupted. "
                                           "Do you still want to load this file as random data ?");
+#endif
         if ( rc == 0 )
-            return;
+            return false;
     }
     // Added debug info....
     TRACE((std::string("New valid cartridge from file: ") + file.getFileName().toStdString()).c_str());
@@ -142,8 +153,9 @@ void DexedAudioProcessorEditor::loadCart(File file) {
     processor->activeFileCartridge = file;
     
     // TODO MOVE TO THE "SELECTED PRESET" CALLBACK ?????
-    csvPresetsWriter.WriteCurrentCartridge(processor);  // depending on internal state, might decide not to write anything
+    csvPresetsWriter->WriteCurrentCartridge(processor);  // depending on internal state, might decide not to write anything
     processor->setCurrentProgram(0);  // re-set to zero - to remain actually usable
+    return true;
 }
 
 void DexedAudioProcessorEditor::saveCart() {

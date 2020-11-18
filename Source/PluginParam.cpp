@@ -683,7 +683,8 @@ int DexedAudioProcessor::getCurrentProgram() {
 }
 
 void DexedAudioProcessor::setCurrentProgram(int index) {
-    TRACE("setting program %d state", index);
+    // Trace disabled for presets dataset writing (too much console output)
+    //TRACE("setting program %d state", index);
 
     if ( lastStateSave + 2 > time(NULL) ) {
         TRACE("skipping save, storage recall to close");
