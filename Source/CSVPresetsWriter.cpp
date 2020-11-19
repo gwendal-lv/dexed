@@ -14,15 +14,21 @@
 
 #include "Dexed.h"  // TRACE macro
 
-CSVPresetsWriter::CSVPresetsWriter(DexedAudioProcessorEditor* _pluginEditor) : pluginEditor(_pluginEditor) {
-    presetsFolder = "/Users/gwendal/Music/DX7_AllTheWeb";
-    shouldWriteCatridges = false;  // to prevent the writing during startup
+CSVPresetsWriter::CSVPresetsWriter(DexedAudioProcessorEditor* _pluginEditor, DexedAudioProcessor* _pluginProcessor) :
+pluginEditor(_pluginEditor), pluginProcessor(_pluginProcessor), delimiter(';')
+{
+    // ================== BASE FOLDER FOR SEARCHING SYSEX FILES ================
+    // ================== BASE FOLDER FOR SEARCHING SYSEX FILES ================
+    presetsFolder = "/Volumes/Gwendal_SSD/Datasets/DX7_AllTheWeb";
+    paramsNamesFileName = "DEXED_PARAMETERS_NAMES.csv";
+    // ================== BASE FOLDER FOR SEARCHING SYSEX FILES ================
+    // ================== BASE FOLDER FOR SEARCHING SYSEX FILES ================
+    shouldWriteCatridges = false;  // to prevent any .csv writing during startup
     
     // Pre-process all available files in directory and sub-directories
     scanDirectory(presetsFolder);
     std::cout << "Presets scan results: " << subFolders.size() << " sub-folders, " << cartridgeFiles.size() << " cartridges (some may be unvalid)." << std::endl;
     
-    // TEST chargement différé d'une cartouche
     Timer::callAfterDelay(2000, [&] () {
         this->shouldWriteCatridges = true;
         this->loadNextCartridge();
@@ -46,9 +52,34 @@ void CSVPresetsWriter::scanDirectory(std::string dirPath) {
     }
 }
 
+void CSVPresetsWriter::writeParamsNames() {
+    std::ofstream csvFile;
+    std::string csvFileName = presetsFolder + "/" + paramsNamesFileName;
+    std::cout << "========== Writing parameters' names to " << paramsNamesFileName << " ==========" << std::endl;
+    csvFile.open(csvFileName);
+    // Columns labels are parameters indexes
+    for (size_t i=0 ; i<pluginProcessor->getNumParameters() ; i++) {
+        if (i > 0)
+            csvFile << delimiter;
+        csvFile << i;
+    }
+    csvFile << std::endl;
+    // parameters names
+    for (size_t i=0 ; i<pluginProcessor->getNumParameters() ; i++) {
+        if (i > 0)
+            csvFile << delimiter;
+        csvFile << pluginProcessor->getParameterName(i).toStdString();
+    }
+    csvFile << std::endl;
+}
+
 void CSVPresetsWriter::loadNextCartridge() {
     currentCartridgeFileIndex++;
-    if (currentCartridgeFileIndex >= cartridgeFiles.size())  // TEMP POUR TEST, lire le tout
+    // First cartridge: plugin params names written to yet another csv file
+    if (currentCartridgeFileIndex == 0)
+        writeParamsNames();
+    // If the last cartridge already written, stop and return
+    if (currentCartridgeFileIndex >= cartridgeFiles.size())
     {
         shouldWriteCatridges = false;  // after writing, the dexed can be used normally
         return;
@@ -69,11 +100,10 @@ void CSVPresetsWriter::loadNextCartridge() {
     }
 }
 
-void CSVPresetsWriter::WriteCurrentCartridge(DexedAudioProcessor *pluginProcessor) {
+void CSVPresetsWriter::WriteCurrentCartridge() {
     if (! shouldWriteCatridges)
         return;
     
-    char delimiter = ';';
     // CSV file: creation and column names
     std::ofstream csvFile;
     std::string csvFileName = currentSubFolder + "/" + currentCartridgeName + ".csv";
@@ -91,6 +121,11 @@ void CSVPresetsWriter::WriteCurrentCartridge(DexedAudioProcessor *pluginProcesso
             //assert(false);  // check the name and how to replace the delimiter-like char
             size_t delimiterPos = presetName.find(delimiter);
             presetName[delimiterPos] = ' ';
+        }
+        // We replace any potential harmful special ASCII code by ' '
+        for (size_t i=0 ; i<presetName.size() ; i++) {
+            if (presetName[i] < 0x20 || 0x7E < presetName[i] || presetName[i] == '"')
+                presetName[i] = ' ';
         }
         csvFile << preset_idx << delimiter << presetName;
         for (size_t i=0 ; i<pluginProcessor->getNumParameters() ; i++)

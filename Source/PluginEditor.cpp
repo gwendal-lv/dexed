@@ -87,7 +87,7 @@ DexedAudioProcessorEditor::DexedAudioProcessorEditor (DexedAudioProcessor* owner
     
     addChildComponent(&cartManager);
     #ifdef __WRITE_PRESETS_DATABASE
-        csvPresetsWriter = std::make_shared<CSVPresetsWriter>(this);
+        csvPresetsWriter = std::make_shared<CSVPresetsWriter>(this, processor);
     #endif
     
     updateUI();
@@ -152,8 +152,8 @@ bool DexedAudioProcessorEditor::loadCart(File file) {
     
     processor->activeFileCartridge = file;
     
-    // TODO MOVE TO THE "SELECTED PRESET" CALLBACK ?????
-    csvPresetsWriter->WriteCurrentCartridge(processor);  // depending on internal state, might decide not to write anything
+    // depending on internal state, might decide not to write anything
+    csvPresetsWriter->WriteCurrentCartridge();
     processor->setCurrentProgram(0);  // re-set to zero - to remain actually usable
     return true;
 }

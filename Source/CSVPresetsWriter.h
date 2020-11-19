@@ -24,10 +24,15 @@ namespace fs = std::filesystem;
 class CSVPresetsWriter {
     
     DexedAudioProcessorEditor* pluginEditor = 0;
+    DexedAudioProcessor* pluginProcessor = 0;
     
     bool shouldWriteCatridges;
     
+    /// CSV delimiter
+    const char delimiter;
+    
     std::string presetsFolder;
+    std::string paramsNamesFileName;
     std::string currentSubFolder;
     std::string currentCartridgeName;
 
@@ -39,13 +44,15 @@ class CSVPresetsWriter {
     /// Stores the sub-directories and the cartridges filenames
     void scanDirectory(std::string path);
     
+    void writeParamsNames();
+    
     ///  Loads the next cartridge (from the pre-scanned folders) and recursively triggers itself on the Juce Message Thread
     /// The loading is done through the PluginEditor, which itself will call this->WriteCurrentCartridge
     void loadNextCartridge();
     
 public:
-    CSVPresetsWriter(DexedAudioProcessorEditor* _pluginEditor);
+    CSVPresetsWriter(DexedAudioProcessorEditor* _pluginEditor, DexedAudioProcessor* _pluginProcessor);
     
-    /// Stores the currently loaded preset - for later write to a CSV file
-    void WriteCurrentCartridge(DexedAudioProcessor *pluginProcessor);
+    /// Actually write all 32 presets from the current cartridge to 1 CSV file
+    void WriteCurrentCartridge();
 };

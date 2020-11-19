@@ -1,3 +1,15 @@
+Modified Dexed to convert DX7 cartridges as human-readable files
+=======================
+
+* The plugin itself can scan a given folder and all .syx/.SYX files will be converted to .csv
+  * ```#define __WRITE_PRESETS_DATABASE``` in the Projucer file
+  * Folder to be scanned is defined in ```CSVPresetsWriter.cpp```
+  * Cartridges validity is checked by Dexed before .csv conversion
+  * Tested with Juce 6.0.4, macOS 10.15
+
+* SQLite presets database
+
+
 Dexed - FM Plugin Synth
 =======================
 
