@@ -10,10 +10,15 @@ import build_database  # configures np array sqlite3 adapters
 
 
 class DuplicatesRemover:
-    def __init__(self):
-        db_filename = build_database._presets_parent_folder + "/" + build_database._output_db_name
-        self.conn = sqlite3.connect(db_filename, detect_types=sqlite3.PARSE_DECLTYPES)
+    def __init__(self, db_filename=None, log_filename=None):
+        if db_filename is None:
+            self.db_filename = build_database._presets_parent_folder + "/" + build_database._output_db_name
+        else:
+            self.db_filename = db_filename
+        self.conn = sqlite3.connect(self.db_filename, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cur = self.conn.cursor()
+        
+        self.log_filename = log_filename
 
         # Some sub-folders might contain a lot of duplicates, thus they are "low-priority" to try to keep a clean
         # structure. In case of duplicate, the ones in this folder will be discarded.
@@ -32,6 +37,12 @@ class DuplicatesRemover:
                 is_low_priority = True
                 break
         return is_low_priority
+    
+    def _log(self, log_str):
+        print(log_str)
+        if self.log_filename is not None:
+            with open(self.log_filename, "a") as log_file:
+                log_file.write(log_str + '\n')
 
     def remove_by_name(self):
         """ identify and remove duplicates by name (check whether preset values are actually the same) """
@@ -60,39 +71,43 @@ class DuplicatesRemover:
                     self.cur.execute("DELETE FROM preset WHERE index_preset={}".format(similar_preset['index_preset']))
                     nb_removed_presets += 1
             if i % 100 == 0:
-                print("(step {}/{}: presets removed by name: {})".format(i, len(preset_indexes), nb_removed_presets))
+                self._log("(step {}/{}: presets removed by name: {})".format(i, len(preset_indexes), nb_removed_presets))
             self.conn.commit()
-        print("======= Search by name: {} duplicates removed ========".format(nb_removed_presets))
+        self._log("======= Search by name: {} duplicates removed ========".format(nb_removed_presets))
 
     def remove_by_value(self):
-        """ Runs through all presets, and searches all remains presets to identify duplicates by value. """
+        """ Runs through all presets, and searches all other presets to identify duplicates by parameter values. """
         nb_removed_presets = 0
         all_presets_df = pd.read_sql_query("SELECT * FROM preset", self.conn)
         preset_indexes = all_presets_df['index_preset'].to_numpy(dtype=np.int)
+        is_preset_removed_from_db = [False for _ in range(preset_indexes.shape[0])]  # index: i or j (not index_preset)
         for i in range(len(preset_indexes) - 1):
-            index_preset = preset_indexes[i]
-            preset_values = all_presets_df.iloc[i]['pickled_params_np_array']
-            # No "low-priority" check
-            # We test all remaining presets
-            other_preset_names = []
-            for j in range(i+1, len(preset_indexes)):
-                index_other_preset = preset_indexes[j]
-                other_preset_values = all_presets_df.iloc[j]['pickled_params_np_array']
-                if np.allclose(preset_values, other_preset_values, atol=0.5/128.0):  # Very similar preset ?
-                    preset_name = all_presets_df.iloc[i]['name']
-                    other_preset_names.append(all_presets_df.iloc[j]['name'])
-                    self.cur.execute("DELETE FROM preset WHERE index_preset={}}".format(index_other_preset))
-                    nb_removed_presets += 1
-            # TODO save name of deleted presets
-            if len(other_preset_names) > 0:
-                other_names = ""
-                for k in range(len(other_preset_names)):
-                    other_names += other_preset_names[k] + '\n'
-                #self.cur.execute("UPDATE preset SET other_names=? WHERE index_preset=?;", (other_names, index_preset))
+            if not is_preset_removed_from_db[i]:
+                index_preset = preset_indexes[i]
+                preset_values = all_presets_df.iloc[i]['pickled_params_np_array']
+                # No "low-priority" check
+                # We test all remaining presets
+                other_preset_names = []
+                for j in range(i+1, len(preset_indexes)):
+                    if not is_preset_removed_from_db[j]:
+                        index_other_preset = preset_indexes[j]
+                        other_preset_values = all_presets_df.iloc[j]['pickled_params_np_array']
+                        if np.allclose(preset_values, other_preset_values, atol=0.5/128.0):  # Very similar preset ?
+                            preset_name = all_presets_df.iloc[i]['name']
+                            other_preset_names.append(all_presets_df.iloc[j]['name'])
+                            self.cur.execute("DELETE FROM preset WHERE index_preset={}".format(index_other_preset))
+                            is_preset_removed_from_db[j] = True
+                            nb_removed_presets += 1
+                # TODO save name of deleted presets
+                if len(other_preset_names) > 0 and False:  # deactivated
+                    other_names = ""
+                    for k in range(len(other_preset_names)):
+                        other_names += other_preset_names[k] + '\n'
+                    #self.cur.execute("UPDATE preset SET other_names=? WHERE index_preset=?;", (other_names, index_preset))
             if i % 100 == 0:
-                print("(step {}/{}: presets removed by value: {})".format(i, len(preset_indexes), nb_removed_presets))
+                self._log("(step {}/{}: presets removed by value: {})".format(i, len(preset_indexes), nb_removed_presets))
             self.conn.commit()
-        print("======= Search by value: {} duplicates removed ========".format(nb_removed_presets))
+        self._log("======= Search by value: {} duplicates removed ========".format(nb_removed_presets))
 
 
 if __name__ == "__main__":
