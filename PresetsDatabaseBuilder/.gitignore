@@ -1,0 +1,9 @@
+
+# Presets DB may be temporarily stored in this folder
+dexed_presets.sqlite
+remove_duplicates.log.txt
+
+# Python/IPython
+*.pyc
+.ipynb_checkpoints/*
+

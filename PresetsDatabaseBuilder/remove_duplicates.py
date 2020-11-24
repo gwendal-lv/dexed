@@ -120,9 +120,9 @@ if __name__ == "__main__":
     # Addition of a new column to save the name of duplicates - call only once
     #cur.execute("ALTER TABLE preset ADD other_names TEXT;")
 
-    # TODO Then, we go through ALL presets one-by-one, to identify duplicates (by preset values) with different names
+    # Then, we go through ALL presets one-by-one, to identify duplicates (by preset values) with different names
     # Might be a quite long computation
-    duplicates_remover.remove_by_value()
+    #duplicates_remover.remove_by_value()
 
     # TODO Finally, we can remove cartridges which contain no preset
 
