@@ -7,7 +7,9 @@ Modified Dexed to convert DX7 cartridges as human-readable files
   * Cartridges validity is checked by Dexed before .csv conversion
   * Tested with Juce 6.0.4, macOS 10.15
 
-* SQLite presets database
+* SQLite presets database building : see Python files and notebooks in ```./PresetsDatabaseBuilder```
+  * SQLite database can be built from the .csv files
+  * Duplicates can be identified by name and/or by value, and removed from the DB
 
 
 Dexed - FM Plugin Synth
